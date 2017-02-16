@@ -12,25 +12,26 @@ var tweets = require("./tweets");
 
 var maxTweets = tweets.length;
 
+var maxWords = wordArray.length;
+
 var oldIndex = -1;
 
 var minutes = 5, the_interval = minutes * 1000//* 60 * 1000;
 
-// setInterval(function() {
-//   console.log("I am doing my 5 minutes check");
-//   tweet();
-//   //checkTweetsToRetweets();
-// }, the_interval);
+setInterval(function() {
+  console.log("I am doing my 5 minutes check");
+  tweet();
+  //checkTweetsToRetweets();
+}, the_interval);
 
 
 function tweet(){
-	Twitter.post('statuses/update', {status: getRandomTweet() + " #PinhoBot"},  function(error, tweet, response){
+	Twitter.post('statuses/update', {status: generateSentence() + " #PinhoBot"},  function(error, tweet, response){
 		if(error){
 			console.log(error);
 		}
 	});
 }
-
 
 function checkTweetsToRetweets(){
 	Twitter.get('statuses/user_timeline', {screen_name: user.user_name},  function(error, data){
@@ -85,4 +86,23 @@ function getRandomTweet() {
 	return tweets[index];
 }
 
+function getRandomWord() {
+	//calculate a random index
+	var wordIndex = Math.floor(Math.random() * (maxWords - 1));
+	return wordArray[wordIndex];
+}
 
+function getNumberOfWords(){
+	var numberOfWords = Math.floor(Math.random() * 6) + 1;
+	return numberOfWords;
+}
+
+function generateSentence(){
+	var numberOfWords = getNumberOfWords();
+	var sentence = "";
+	for (var i = 0; i < numberOfWords; i++) {
+		var word = getRandomWord();
+		sentence += " " + word;
+	}
+	return sentence;
+}
