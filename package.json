@@ -1,0 +1,32 @@
+{
+  "name": "fillipe",
+  "version": "0.0.2",
+  "description": "Twitter bot",
+  "main": "app.js",
+  "dependencies": {
+    "twitter": "^1.7.0"
+  },
+  "devDependencies": {
+    "word-list": "^2.0.0"
+  },
+  "scripts": {
+    "test": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinhorox/twitter_bot.git"
+  },
+  "keywords": [
+    "twitter",
+    "bot",
+    "tweet",
+    "retweet",
+    "unfollow"
+  ],
+  "author": "fillipe ramos",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pinhorox/twitter_bot/issues"
+  },
+  "homepage": "https://github.com/pinhorox/twitter_bot#readme"
+}

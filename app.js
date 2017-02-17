@@ -8,22 +8,24 @@ var secret = require("./private/secret");
 var user = require("./private/user");
 var Twitter = new TwitterPackage(secret);
 
-var tweets = require("./tweets");
-
-var maxTweets = tweets.length;
-
 var maxWords = wordArray.length;
 
 var oldIndex = -1;
 
 var minutes = 5, the_interval = minutes * 1000//* 60 * 1000;
 
-setInterval(function() {
-  console.log("I am doing my 5 minutes check");
-  tweet();
-  //checkTweetsToRetweets();
-}, the_interval);
+/*setInterval(function() {
+	console.log("I am doing my 5 minutes check");
+	tweet();
+	//checkTweetsToRetweets();
+}, the_interval);*/
 
+
+/* 
+	|-----------------------------------------------------------------------|
+	|--------------------------------- Tweet -------------------------------|
+	|-----------------------------------------------------------------------|
+*/ 
 
 function tweet(){
 	Twitter.post('statuses/update', {status: generateSentence() + " #PinhoBot"},  function(error, tweet, response){
@@ -33,24 +35,32 @@ function tweet(){
 	});
 }
 
+
+/* 
+	|-----------------------------------------------------------------------|
+	|--------------------------------- Retweet -----------------------------|
+	|-----------------------------------------------------------------------|
+*/
+
+
 function checkTweetsToRetweets(){
-	Twitter.get('statuses/user_timeline', {screen_name: user.user_name},  function(error, data){
+	Twitter.get('statuses/user_timeline', {screen_name: user.target_user_name},  function(error, data){
 		if(error){
 			console.log(error);
 		}else{
 			for(var i=0; i < data.length; i++){
 				if(data[i].retweeted_status == null){
 					if(data[i].retweeted == false){
-						console.log("Nao foi retwittado");
+						console.log("Wasnt retweeted");
 						// grab ID of tweet to retweet
 						var retweetId = data[i].id_str;
 						// Tell TWITTER to retweet
 						retweet(retweetId);
 					}else{
-						console.log("Ja foi retwittado");
+						console.log("Already retweeted");
 					}
 				}else{
-					console.log("Eh retweet");
+					console.log("It is a retweet");
 				}
 			}
 		}
@@ -68,22 +78,6 @@ function retweet(retweetId){
 			console.log('Something went wrong while RETWEETING... Duplication maybe...');
 		}
 	});
-}
-
-function getRandomTweet() {
-	//calculate a random index
-	var index = Math.floor(Math.random() * (maxTweets - 1));
-	if(oldIndex == index){
-		if(index == 0){
-			index+1;
-		}
-		else{
-			index-1;
-		}
-	}
-	//return the random sentence
-	oldIndex = index;
-	return tweets[index];
 }
 
 function getRandomWord() {
@@ -106,3 +100,59 @@ function generateSentence(){
 	}
 	return sentence;
 }
+
+/* 
+	|-----------------------------------------------------------------------|
+	|---------------------------- Following List ---------------------------|
+	|-----------------------------------------------------------------------|
+*/
+
+unFollowNotFollowing();
+
+function checkFollowingList(callback){
+	Twitter.get('friends/ids', {screen_name: user.my_user_name, stringify_ids: true},  function(error, data){
+		if(error){
+			console.log(error);
+		}else{
+			// console.log("Following number: " + data.ids.length);
+			callback(data);
+		}
+	});
+}
+
+function unFollowById(id){
+	Twitter.post('/friendships/destroy', {user_id: id},  function(error, data){
+		if(error){
+			console.log(error);
+		}else{
+			console.log("Original ID: " + id);
+			console.log(data);
+			console.log("Succesfully removed: " + data.screen_name);
+			// console.log(data);
+			relationshipOfUser(data.id_str);
+		}
+	});
+}
+
+function relationshipOfUser(id){
+	Twitter.get('/friendships/show', {source_screen_name: user.my_user_name, target_id: id },  function(error, data){
+		if(error){
+			console.log(error);
+		}else{
+			console.log(data.relationship.target.screen_name + " " + (data.relationship.source.followed_by? "is" : "isnt") + " following " + user.my_user_name);
+			console.log(user.my_user_name + " " + (data.relationship.source.following? "is" : "isnt") + " following " + data.relationship.target.screen_name);
+			return data;
+		}
+	});
+}
+
+function unFollowNotFollowing(){
+	checkFollowingList(function(response) {
+    	if(response != null){
+			console.log("response");
+		}
+	})
+}
+
+
+
