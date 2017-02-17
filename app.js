@@ -107,8 +107,6 @@ function generateSentence(){
 	|-----------------------------------------------------------------------|
 */
 
-unFollowNotFollowing();
-
 function checkFollowingList(callback){
 	Twitter.get('friends/ids', {screen_name: user.my_user_name, stringify_ids: true},  function(error, data){
 		if(error){
@@ -125,23 +123,19 @@ function unFollowById(id){
 		if(error){
 			console.log(error);
 		}else{
-			console.log("Original ID: " + id);
-			console.log(data);
 			console.log("Succesfully removed: " + data.screen_name);
-			// console.log(data);
-			relationshipOfUser(data.id_str);
 		}
 	});
 }
 
-function relationshipOfUser(id){
+function relationshipOfUser(id, callback){
 	Twitter.get('/friendships/show', {source_screen_name: user.my_user_name, target_id: id },  function(error, data){
 		if(error){
 			console.log(error);
 		}else{
 			console.log(data.relationship.target.screen_name + " " + (data.relationship.source.followed_by? "is" : "isnt") + " following " + user.my_user_name);
 			console.log(user.my_user_name + " " + (data.relationship.source.following? "is" : "isnt") + " following " + data.relationship.target.screen_name);
-			return data;
+			callback(data.relationship);
 		}
 	});
 }
@@ -149,10 +143,30 @@ function relationshipOfUser(id){
 function unFollowNotFollowing(){
 	checkFollowingList(function(response) {
     	if(response != null){
-			console.log("response");
+    		console.log(response.ids.length);
+    		var minutes = 5, the_interval = minutes * 1000//* 60 * 1000;
+    		var i = 0;
+    		// Wait some seconds to unfollow to not reach API's limit
+    		var timer = setInterval(function() {
+	    		relationshipOfUser(response.ids[i], function(relationship){
+					if(!relationship.source.followed_by){
+						unFollowById(relationship.target.id_str);
+						console.log("He is NOT following you back, unfollowed.");
+					}else{
+						console.log("He is following you back");
+					}
+				})
+				if(i == response.ids.length){
+					clearInterval(timer);
+					console.log("clear");
+				}
+				i++;
+			}, the_interval);
 		}
 	})
 }
+
+unFollowNotFollowing();
 
 
 
