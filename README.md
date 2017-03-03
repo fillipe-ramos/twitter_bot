@@ -27,7 +27,7 @@ File structure:
 ```
 
 secret.json should have the following code:
-```
+```JSON
 {
 	"consumer_key": "YOUR_KEY_HERE",
 	"consumer_secret": "YOUR_SECRET_HERE",
@@ -39,7 +39,7 @@ secret.json should have the following code:
 To get your keys and tokens, follow this guide till Step 2 (or continue if you want to create one using python and tweepy).
 
 user.json should have the following code:
-```
+```JSON
 {
 	"target_user_name": "@user_name",
 	"my_user_name": "@my_user_name"
