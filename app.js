@@ -17,8 +17,60 @@ var minutes = 5, the_interval = minutes * 1000//* 60 * 1000;
 /*setInterval(function() {
 	console.log("I am doing my 5 minutes check");
 	tweet();
-	//checkTweetsToRetweets();
+	//checkTweetsToRetweet();
 }, the_interval);*/
+
+showMain();
+// Main
+function showMain() {
+    console.log(
+        '1 = 20 Tweets with random words' + '\n' +
+        '2 = Unfollow who is not following you back...'  + '\n' +
+		'3 = Retweet from target_user_name' + '\n' + 
+        '4 = Exit'  + '\n\n' +
+        'Choose number, then press ENTER:'
+        );
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('readable', checkMenu);
+
+    function checkMenu() {
+        var input = process.stdin.read();
+        if(input !== null) {
+            switch(input.trim()) {
+                case '1': checkTweetDone(); break;
+                case '2': checkUnFollowNotFollowingDone(); break;
+				case '3': checkRetweetDone(); break;
+                case '4': process.exit(); break;
+                default: 
+					console.log('\x1b[31m%s\x1b[0m', 'NOT an option' + '\n');
+					showMain();
+            }
+        }
+    }
+}
+
+function checkTweetDone(){
+	tweet(function(response){
+		if(response){
+			showMain();
+		}
+	});
+}
+
+function checkUnFollowNotFollowingDone(){
+	unFollowNotFollowing(function(response){
+		if(response){
+			showMain();
+		}
+	});
+}
+function checkRetweetDone(){
+	retweet(function(response){
+		if(response){
+			showMain();
+		}
+	});
+}
 
 
 /* 
@@ -27,12 +79,21 @@ var minutes = 5, the_interval = minutes * 1000//* 60 * 1000;
 	|-----------------------------------------------------------------------|
 */ 
 
-function tweet(){
-	Twitter.post('statuses/update', {status: generateSentence() + " #PinhoBot"},  function(error, tweet, response){
-		if(error){
-			console.log(error);
-		}
-	});
+function tweet(callback){
+	var tweeted = 0;
+	while(tweeted < 20){
+		Twitter.post('statuses/update', {status: generateSentence() + " #PinhoBot"},  function(error, tweet, response){
+			if(error){
+				console.log(error);
+			}
+		});
+		tweeted++;
+	}
+	if(tweeted == 20){
+		callback(true);
+	}else{
+		callback(false);
+	}
 }
 
 
@@ -42,8 +103,15 @@ function tweet(){
 	|-----------------------------------------------------------------------|
 */
 
+function retweet(callback){
+	checkTweetsToRetweet(function(response) {
+    	if(response != null){
+			callback(response);
+		}
+	})
+}
 
-function checkTweetsToRetweets(){
+function checkTweetsToRetweet(callback){
 	Twitter.get('statuses/user_timeline', {screen_name: user.target_user_name},  function(error, data){
 		if(error){
 			console.log(error);
@@ -55,7 +123,7 @@ function checkTweetsToRetweets(){
 						// grab ID of tweet to retweet
 						var retweetId = data[i].id_str;
 						// Tell TWITTER to retweet
-						retweet(retweetId);
+						retweetById(retweetId);
 					}else{
 						console.log("Already retweeted");
 					}
@@ -63,19 +131,19 @@ function checkTweetsToRetweets(){
 					console.log("It is a retweet");
 				}
 			}
+			console.log('Done.' + '\n');
+			callback(true);
 		}
 	});
 }
 
-function retweet(retweetId){
-	Twitter.post('statuses/retweet/' + retweetId , function(err, response) {
-		if (response) {
-			console.log('Retweeted!!!');
-			console.log(response);
-		}
+function retweetById(retweetId){
+	Twitter.post('statuses/retweet/' + retweetId , function(error, response) {
 		// if there was an error while tweeting
-		if (err) {
-			console.log('Something went wrong while RETWEETING... Duplication maybe...');
+		if (error) {
+			console.log(error, 'Something went wrong while RETWEETING... Duplication maybe...');
+		}else{
+			console.log('Retweeted!!!');
 		}
 	});
 }
@@ -123,7 +191,7 @@ function unFollowById(id){
 		if(error){
 			console.log(error);
 		}else{
-			console.log("Succesfully removed: " + data.screen_name);
+			console.log('\x1b[33m%s\x1b[0m: ', "Succesfully removed: " + data.screen_name);
 		}
 	});
 }
@@ -140,7 +208,7 @@ function relationshipOfUser(id, callback){
 	});
 }
 
-function unFollowNotFollowing(){
+function unFollowNotFollowing(callback){
 	checkFollowingList(function(response) {
     	if(response != null){
     		console.log(response.ids.length);
@@ -148,25 +216,23 @@ function unFollowNotFollowing(){
     		var i = 0;
     		// Wait some seconds to unfollow to not reach API's limit
     		var timer = setInterval(function() {
-	    		relationshipOfUser(response.ids[i], function(relationship){
-					if(!relationship.source.followed_by){
-						unFollowById(relationship.target.id_str);
-						console.log("He is NOT following you back, unfollowed.");
-					}else{
-						console.log("He is following you back");
-					}
-				})
-				if(i == response.ids.length){
+	    		if(i == response.ids.length){
 					clearInterval(timer);
-					console.log("clear");
+					console.log('Done.' +  '\n');
+					callback(true);
+				}else{
+					relationshipOfUser(response.ids[i], function(relationship){
+						if(!relationship.source.followed_by){
+							console.error("He is NOT following you back.");
+							unFollowById(relationship.target.id_str);
+						}else{
+							console.log('\x1b[32m%s\x1b[0m', "He is following you back");
+						}
+					})
 				}
 				i++;
 			}, the_interval);
 		}
-	})
+	});
 }
-
-unFollowNotFollowing();
-
-
 
